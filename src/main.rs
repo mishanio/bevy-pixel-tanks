@@ -1,7 +1,11 @@
-pub mod pixel_tank_plugin;
+pub mod game;
+pub mod ui_menu;
+pub mod models;
 
 use bevy::prelude::*;
-use pixel_tank_plugin::PixelTankPlugin;
+use models::app_state::AppState;
+use game::pixel_tank_plugin::PixelTankPlugin;
+use ui_menu::ui_menu_main_plugin::UiMenuPlugin;
 
 fn main() {
     App::new()
@@ -12,7 +16,9 @@ fn main() {
         },
         ..default()
     }))
-    .add_plugin(PixelTankPlugin{})
+    .add_state(AppState::MainMenu)
+    .add_plugin(UiMenuPlugin)
+    .add_plugin(PixelTankPlugin)
     .add_startup_system(setup)
 
     .run();

@@ -1,4 +1,6 @@
-use bevy::prelude::*;
+use std::collections::HashMap;
+
+use bevy::{prelude::*, utils::HashSet};
 
 use crate::models::app_state::AppState;
 
@@ -33,16 +35,25 @@ impl Default for PlayerTankBundle {
     }
 }
 
+struct TankRotateEvent {
+    entity: Entity,
+    prev_direction: MoveDirection,
+    direction: MoveDirection
+}
+
 pub struct PixelTankPlugin;
 
 impl Plugin for PixelTankPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set(SystemSet::on_enter(AppState::Game).with_system(setup))
+        app.add_event::<TankRotateEvent>()
+        .add_system_set(SystemSet::on_enter(AppState::Game).with_system(setup))
             .add_system_set(SystemSet::on_exit(AppState::Game).with_system(despawn))
             .add_system_set(
                 SystemSet::on_update(AppState::Game)
                     .with_system(movement_system)
-                    .with_system(player_tank_control_system),
+                    .with_system(player_tank_control_system)
+                    .with_system(tank_rotate_system)
+                    ,
             );
     }
 }
@@ -64,9 +75,11 @@ fn despawn(mut commands: Commands, q_dispawn: Query<Entity, With<Despawnable>>) 
 
 fn player_tank_control_system(
     keys: Res<Input<KeyCode>>,
-    mut player_tank_query: Query<(&mut Movement, &Acceleration), With<Player>>,
+    mut event_writer: EventWriter<TankRotateEvent>,
+    mut player_tank_query: Query<(Entity, &mut Movement, &Acceleration), With<Player>>,
 ) {
-    let (mut movement, acceleration) = player_tank_query.single_mut();
+    let (entity, mut movement, acceleration) = player_tank_query.single_mut();
+    let prev_direction = movement.direction.clone();
     if keys.pressed(KeyCode::Up) {
         movement.speed = acceleration.speed;
         movement.direction = MoveDirection::Up;
@@ -82,6 +95,9 @@ fn player_tank_control_system(
     } else {
         movement.speed = 0.0;
     }
+    if prev_direction != movement.direction {
+        event_writer.send(TankRotateEvent { entity: entity, prev_direction: prev_direction, direction: movement.direction.clone()})
+    }
 }
 
 fn movement_system(mut q_movement: Query<(&mut Transform, &Movement)>) {
@@ -90,4 +106,21 @@ fn movement_system(mut q_movement: Query<(&mut Transform, &Movement)>) {
         transform.translation.x += x;
         transform.translation.y += y;
     }
+}
+
+fn tank_rotate_system(
+    mut tank_rotate_event: EventReader<TankRotateEvent>,
+    mut tank_query: Query<(Entity, &mut Transform), With<Movement>>
+) {
+
+    let rotate_ids: HashMap<Entity, &TankRotateEvent> = tank_rotate_event.iter()
+    .map(|event| (event.entity, event)).collect();
+    for (entity, mut transform) in tank_query.iter_mut() {
+        //TODO use directions
+        if let Some(event) = rotate_ids.get(&entity) {
+             
+            transform.rotation = Quat::from_rotation_z(90.0_f32);
+        } 
+    }
+
 }

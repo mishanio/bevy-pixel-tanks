@@ -5,6 +5,7 @@ use bevy::prelude::{Component, Vec2};
 pub struct Despawnable;
 
 
+#[derive(Clone, PartialEq)]
 pub enum MoveDirection {
     Up,
     Down,

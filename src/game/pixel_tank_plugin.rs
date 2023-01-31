@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use bevy::{prelude::*, utils::HashSet};
+use bevy::prelude::*;
 
 use crate::models::app_state::AppState;
 
@@ -35,6 +35,7 @@ impl Default for PlayerTankBundle {
     }
 }
 
+#[derive(Debug)]
 struct TankRotateEvent {
     entity: Entity,
     prev_direction: MoveDirection,
@@ -118,8 +119,15 @@ fn tank_rotate_system(
     for (entity, mut transform) in tank_query.iter_mut() {
         //TODO use directions
         if let Some(event) = rotate_ids.get(&entity) {
-             
-            transform.rotation = Quat::from_rotation_z(90.0_f32);
+            let prev_direction =event.prev_direction.to_vec2_direction();
+            let curent_direction =event.direction.to_vec2_direction();
+            warn!("TankRotate event {:?}", event);
+
+            let prev_direction_vec = Vec2::new(prev_direction.0, prev_direction.1);
+            let curent_direction_vec = Vec2::new(curent_direction.0, curent_direction.1);
+            let angle = prev_direction_vec.angle_between(curent_direction_vec);
+            warn!("prev_direction_vec {:?}, curent_direction_vec {:?} angle {:?}", prev_direction_vec, curent_direction_vec, angle);
+            transform.rotate_z(angle);
         } 
     }
 

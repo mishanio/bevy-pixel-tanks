@@ -5,12 +5,28 @@ use bevy::prelude::{Component, Vec2};
 pub struct Despawnable;
 
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum MoveDirection {
     Up,
     Down,
     Right,
     Left,
+}
+
+impl MoveDirection {
+
+    pub fn to_vec2_direction(&self) -> (f32, f32) {
+        self.to_vec2(1.0)
+    }
+
+    pub fn to_vec2(&self, speed: f32) -> (f32, f32) {
+        match self {
+            MoveDirection::Up => (0.0, 1.0 * speed),
+            MoveDirection::Down => (0.0, -1.0 * speed),
+            MoveDirection::Right => (1.0 * speed, 0.0),
+            MoveDirection::Left => (-1.0 * speed, 0.0),
+        }
+    }
 }
 
 /// Represents movement of entity
@@ -27,11 +43,6 @@ impl Movement {
     }
 
     pub fn to_vec2(&self) -> (f32, f32) {
-        match self.direction {
-            MoveDirection::Up => (0.0, self.speed),
-            MoveDirection::Down => (0.0, -self.speed),
-            MoveDirection::Right => (self.speed, 0.0),
-            MoveDirection::Left => (-self.speed, 0.0),
-        }
+        self.direction.to_vec2(self.speed)
     }
 }

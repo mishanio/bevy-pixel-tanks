@@ -121,12 +121,12 @@ fn tank_rotate_system(
         if let Some(event) = rotate_ids.get(&entity) {
             let prev_direction =event.prev_direction.to_vec2_direction();
             let curent_direction =event.direction.to_vec2_direction();
-            warn!("TankRotate event {:?}", event);
+            debug!("TankRotate event {:?}", event);
 
             let prev_direction_vec = Vec2::new(prev_direction.0, prev_direction.1);
             let curent_direction_vec = Vec2::new(curent_direction.0, curent_direction.1);
             let angle = prev_direction_vec.angle_between(curent_direction_vec);
-            warn!("prev_direction_vec {:?}, curent_direction_vec {:?} angle {:?}", prev_direction_vec, curent_direction_vec, angle);
+            debug!("prev_direction_vec {:?}, curent_direction_vec {:?} angle {:?}", prev_direction_vec, curent_direction_vec, angle);
             transform.rotate_z(angle);
         } 
     }

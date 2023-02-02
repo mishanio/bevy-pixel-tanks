@@ -25,3 +25,6 @@ wasm-bindgen --out-dir ./out/ --target web ./target/
 
 для создания спрайта 
 https://www.piskelapp.com/p/create/sprite
+
+Туториал по wasm
+https://rustwasm.github.io/docs/book/game-of-life/introduction.html

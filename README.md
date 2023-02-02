@@ -11,7 +11,13 @@ cargo install cargo-watch
 Run in browser
 https://bevy-cheatbook.github.io/platforms/wasm.html
 
+rustup target install wasm32-unknown-unknown
+
+cargo install wasm-server-runner
+
 cargo run --target wasm32-unknown-unknown
+
+wasm-server-runner target/wasm32-unknown-unknown/debug/bevy-pixel-tanks.wasm
 
 
 cargo build --release --target wasm32-unknown-unknown

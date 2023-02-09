@@ -42,6 +42,8 @@ struct TankRotateEvent {
     direction: MoveDirection
 }
 
+
+
 pub struct PixelTankPlugin;
 
 impl Plugin for PixelTankPlugin {
@@ -113,7 +115,6 @@ fn tank_rotate_system(
     mut tank_rotate_event: EventReader<TankRotateEvent>,
     mut tank_query: Query<(Entity, &mut Transform), With<Movement>>
 ) {
-
     let rotate_ids: HashMap<Entity, &TankRotateEvent> = tank_rotate_event.iter()
     .map(|event| (event.entity, event)).collect();
     for (entity, mut transform) in tank_query.iter_mut() {
@@ -130,5 +131,4 @@ fn tank_rotate_system(
             transform.rotate_z(angle);
         } 
     }
-
 }

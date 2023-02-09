@@ -2,12 +2,12 @@ use bevy::prelude::*;
 use super::components::*;
 
 #[derive(Debug)]
-struct BullteSpawnEvent {
+struct BulletSpawnEvent {
     
 }
 
 #[derive(Bundle)]
-struct PlayerTankBundle {
-
-    movement: Movement
+struct BulletBundle {
+    movement: Movement,
+    dispawnable: Despawnable,
 }

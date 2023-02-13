@@ -1,5 +1,5 @@
 
-use bevy::prelude::Component;
+use bevy::prelude::{Component, Vec2, debug};
 
 #[derive(Component)]
 pub struct Despawnable;
@@ -27,11 +27,24 @@ impl MoveDirection {
             MoveDirection::Left => (-1.0 * speed, 0.0),
         }
     }
+    pub fn angle_between(&self, direction: &MoveDirection) -> f32 {
+    let prev_direction = direction.to_vec2_direction();
+    let curent_direction = self.to_vec2_direction();
+
+    let prev_direction_vec = Vec2::new(prev_direction.0, prev_direction.1);
+    let curent_direction_vec = Vec2::new(curent_direction.0, curent_direction.1);
+    let angle = prev_direction_vec.angle_between(curent_direction_vec);
+    debug!(
+        "prev_direction_vec {:?}, curent_direction_vec {:?} angle {:?}",
+        prev_direction_vec, curent_direction_vec, angle
+    );
+    return angle;
+}
 }
 
 /// Represents movement of entity
 /// consists of speed value and direction of movement
-#[derive(Component)]
+#[derive(Component, Debug, Clone)]
 pub struct Movement {
     pub speed: f32,
     pub direction: MoveDirection,

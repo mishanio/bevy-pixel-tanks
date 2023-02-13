@@ -4,7 +4,7 @@ use bevy::prelude::*;
 
 use crate::models::app_state::AppState;
 
-use super::components::*;
+use super::{bullet_components::{BulletSpawnEvent, BulletBundle}, components::*};
 
 const Z_TANK: f32 = 1.0;
 
@@ -36,27 +36,27 @@ impl Default for PlayerTankBundle {
 }
 
 #[derive(Debug)]
-struct TankRotateEvent {
+struct EntityRotateEvent {
     entity: Entity,
     prev_direction: MoveDirection,
-    direction: MoveDirection
+    direction: MoveDirection,
 }
-
-
 
 pub struct PixelTankPlugin;
 
 impl Plugin for PixelTankPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<TankRotateEvent>()
-        .add_system_set(SystemSet::on_enter(AppState::Game).with_system(setup))
+        app.add_event::<EntityRotateEvent>()
+            .add_event::<BulletSpawnEvent>()
+            .add_system_set(SystemSet::on_enter(AppState::Game).with_system(setup))
             .add_system_set(SystemSet::on_exit(AppState::Game).with_system(despawn))
             .add_system_set(
                 SystemSet::on_update(AppState::Game)
                     .with_system(movement_system)
-                    .with_system(player_tank_control_system)
-                    .with_system(tank_rotate_system)
-                    ,
+                    .with_system(player_tank_movement_control_system)
+                    .with_system(player_tank_fire_control_system)
+                    .with_system(bullet_spawn_system)
+                    .with_system(entity_rotate_system),
             );
     }
 }
@@ -70,15 +70,16 @@ fn setup(mut commands: Commands, assets_server: Res<AssetServer>) {
         .insert(PlayerTankBundle::default());
 }
 
+// TODO move to generic pluging
 fn despawn(mut commands: Commands, q_dispawn: Query<Entity, With<Despawnable>>) {
     for id in q_dispawn.iter() {
         commands.entity(id).despawn_recursive();
     }
 }
 
-fn player_tank_control_system(
+fn player_tank_movement_control_system(
     keys: Res<Input<KeyCode>>,
-    mut event_writer: EventWriter<TankRotateEvent>,
+    mut entity_rotate_writer: EventWriter<EntityRotateEvent>,
     mut player_tank_query: Query<(Entity, &mut Movement, &Acceleration), With<Player>>,
 ) {
     let (entity, mut movement, acceleration) = player_tank_query.single_mut();
@@ -99,10 +100,33 @@ fn player_tank_control_system(
         movement.speed = 0.0;
     }
     if prev_direction != movement.direction {
-        event_writer.send(TankRotateEvent { entity: entity, prev_direction: prev_direction, direction: movement.direction.clone()})
+        entity_rotate_writer.send(EntityRotateEvent {
+            entity: entity,
+            prev_direction: prev_direction,
+            direction: movement.direction.clone(),
+        })
     }
 }
 
+fn player_tank_fire_control_system(
+    keys: Res<Input<KeyCode>>,
+    mut bullet_spawn_writer: EventWriter<BulletSpawnEvent>,
+    mut player_tank_query: Query<(&Movement, &Transform), With<Player>>,
+) {
+    let (movement, transform) = player_tank_query.single_mut();
+    if keys.just_released(KeyCode::Space) {
+        bullet_spawn_writer.send(BulletSpawnEvent {
+            spawn_point: transform.translation.clone(),
+            movement: Movement {
+                speed: 5.,
+                direction: movement.direction.clone(),
+            }
+        });
+        
+    }
+}
+
+// TODO move to generic pluging
 fn movement_system(mut q_movement: Query<(&mut Transform, &Movement)>) {
     for (mut transform, movement) in q_movement.iter_mut() {
         let (x, y) = movement.to_vec2();
@@ -111,24 +135,42 @@ fn movement_system(mut q_movement: Query<(&mut Transform, &Movement)>) {
     }
 }
 
-fn tank_rotate_system(
-    mut tank_rotate_event: EventReader<TankRotateEvent>,
-    mut tank_query: Query<(Entity, &mut Transform), With<Movement>>
+// TODO move to generic pluging
+fn entity_rotate_system(
+    mut entity_rotate_event: EventReader<EntityRotateEvent>,
+    mut entity_movement_query: Query<(Entity, &mut Transform), With<Movement>>,
 ) {
-    let rotate_ids: HashMap<Entity, &TankRotateEvent> = tank_rotate_event.iter()
-    .map(|event| (event.entity, event)).collect();
-    for (entity, mut transform) in tank_query.iter_mut() {
+    let rotate_ids: HashMap<Entity, &EntityRotateEvent> = entity_rotate_event
+        .iter()
+        .map(|event| (event.entity, event))
+        .collect();
+    for (entity, mut transform) in entity_movement_query.iter_mut() {
         //TODO use directions
         if let Some(event) = rotate_ids.get(&entity) {
-            let prev_direction =event.prev_direction.to_vec2_direction();
-            let curent_direction =event.direction.to_vec2_direction();
-            debug!("TankRotate event {:?}", event);
-
-            let prev_direction_vec = Vec2::new(prev_direction.0, prev_direction.1);
-            let curent_direction_vec = Vec2::new(curent_direction.0, curent_direction.1);
-            let angle = prev_direction_vec.angle_between(curent_direction_vec);
-            debug!("prev_direction_vec {:?}, curent_direction_vec {:?} angle {:?}", prev_direction_vec, curent_direction_vec, angle);
+            let angle = event.direction.angle_between(&event.prev_direction);
             transform.rotate_z(angle);
-        } 
+        }
     }
+}
+
+// TODO move to bullet plugin 
+fn bullet_spawn_system(mut commands: Commands, 
+    mut bullet_spawn_event: EventReader<BulletSpawnEvent>,
+    // mut entity_rotate_writer: EventWriter<EntityRotateEvent>,
+    assets_server: Res<AssetServer>) {
+
+    for event in bullet_spawn_event.iter() {
+        let angle = MoveDirection::Up.angle_between(&event.movement.direction);
+        let mut transform = Transform::from_translation(event.spawn_point).with_scale(Vec3::new(0.5, 0.5, 1.));
+        transform.rotate_z(angle);
+        commands
+        .spawn(SpriteBundle {
+            texture: assets_server.load("bullet.png"),
+            transform,
+            ..default()
+        })
+        .insert(BulletBundle::from_movement(event.movement.clone()));
+        // entity_rotate_writer.send(EntityRotateEvent { entity, prev_direction: MoveDirection::Up, direction: event.movement.direction.clone() })
+    }
+
 }

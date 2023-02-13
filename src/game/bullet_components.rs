@@ -2,12 +2,22 @@ use bevy::prelude::*;
 use super::components::*;
 
 #[derive(Debug)]
-struct BulletSpawnEvent {
-    
+pub struct BulletSpawnEvent {
+    pub spawn_point: Vec3,
+    pub movement: Movement,
 }
 
 #[derive(Bundle)]
-struct BulletBundle {
+pub struct BulletBundle {
     movement: Movement,
     dispawnable: Despawnable,
+}
+
+impl BulletBundle {
+    pub fn from_movement(movement: Movement) -> BulletBundle {
+        BulletBundle {
+            movement: movement,
+            dispawnable: Despawnable,
+        }
+    }
 }

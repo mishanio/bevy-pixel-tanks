@@ -4,7 +4,10 @@ use bevy::prelude::*;
 
 use crate::models::app_state::AppState;
 
-use super::{bullet_components::{BulletSpawnEvent, BulletBundle}, components::*};
+use super::{
+    bullet_components::{BulletBundle, BulletSpawnEvent},
+    components::*,
+};
 
 const Z_TANK: f32 = 1.0;
 
@@ -116,13 +119,13 @@ fn player_tank_fire_control_system(
     let (movement, transform) = player_tank_query.single_mut();
     if keys.just_released(KeyCode::Space) {
         bullet_spawn_writer.send(BulletSpawnEvent {
+            // TODO determine spawn_point direction with offset from barrel, not from the center of the tank  
             spawn_point: transform.translation.clone(),
             movement: Movement {
                 speed: 5.,
                 direction: movement.direction.clone(),
-            }
+            },
         });
-        
     }
 }
 
@@ -153,24 +156,26 @@ fn entity_rotate_system(
     }
 }
 
-// TODO move to bullet plugin 
-fn bullet_spawn_system(mut commands: Commands, 
+// TODO move to bullet plugin
+fn bullet_spawn_system(
+    mut commands: Commands,
     mut bullet_spawn_event: EventReader<BulletSpawnEvent>,
     // mut entity_rotate_writer: EventWriter<EntityRotateEvent>,
-    assets_server: Res<AssetServer>) {
-
+    assets_server: Res<AssetServer>,
+) {
     for event in bullet_spawn_event.iter() {
-        let angle = MoveDirection::Up.angle_between(&event.movement.direction);
-        let mut transform = Transform::from_translation(event.spawn_point).with_scale(Vec3::new(0.5, 0.5, 1.));
-        transform.rotate_z(angle);
+        let angle = event.movement.direction.angle_between(&MoveDirection::Up);
+        let transform = Transform::from_translation(event.spawn_point)
+            .with_scale(Vec3::new(0.5, 0.5, 1.))
+            .with_rotation(Quat::from_rotation_z(angle));
+        // transform.rotate_local_z(angle);
         commands
-        .spawn(SpriteBundle {
-            texture: assets_server.load("bullet.png"),
-            transform,
-            ..default()
-        })
-        .insert(BulletBundle::from_movement(event.movement.clone()));
+            .spawn(SpriteBundle {
+                texture: assets_server.load("bullet_1.png"),
+                transform,
+                ..default()
+            })
+            .insert(BulletBundle::from_movement(event.movement.clone()));
         // entity_rotate_writer.send(EntityRotateEvent { entity, prev_direction: MoveDirection::Up, direction: event.movement.direction.clone() })
     }
-
 }

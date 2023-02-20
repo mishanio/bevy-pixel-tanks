@@ -52,6 +52,7 @@ impl Plugin for PixelTankPlugin {
         app.add_event::<EntityRotateEvent>()
             .add_event::<BulletSpawnEvent>()
             .add_system_set(SystemSet::on_enter(AppState::Game).with_system(setup))
+            .add_system_set(SystemSet::on_enter(AppState::Game).with_system(setup_obstacle))
             .add_system_set(SystemSet::on_exit(AppState::Game).with_system(despawn))
             .add_system_set(
                 SystemSet::on_update(AppState::Game)
@@ -71,6 +72,35 @@ fn setup(mut commands: Commands, assets_server: Res<AssetServer>) {
             ..default()
         })
         .insert(PlayerTankBundle::default());
+}
+
+
+//TODO move to ObstaclePlugin
+#[derive(Component)]
+struct Obstacle;
+
+#[derive(Bundle)]
+struct ObstacleBundle {
+    obstacle: Obstacle,
+    dispawnable: Despawnable,
+}
+
+impl Default for ObstacleBundle {
+    fn default() -> Self {
+        Self {
+            obstacle: Obstacle,
+            dispawnable: Despawnable
+        }
+    }
+}
+
+fn setup_obstacle(mut commands: Commands, assets_server: Res<AssetServer>) {
+    commands
+        .spawn(SpriteBundle {
+            texture: assets_server.load("brick_1.png"),
+            ..default()
+        })
+        .insert(ObstacleBundle::default());
 }
 
 // TODO move to generic pluging

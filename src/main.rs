@@ -4,7 +4,7 @@ pub mod models;
 
 use bevy::prelude::*;
 use models::app_state::AppState;
-use game::pixel_tank_plugin::PixelTankPlugin;
+use game::{pixel_tank_plugin::PixelTankPlugin, generic_game_plugin::GenericGamePlugin, obstacle_plugin::ObstaclePlugin};
 use ui_menu::ui_menu_main_plugin::UiMenuPlugin;
 
 fn main() {
@@ -18,7 +18,9 @@ fn main() {
     }))
     .add_state(AppState::MainMenu)
     .add_plugin(UiMenuPlugin)
+    .add_plugin(GenericGamePlugin)
     .add_plugin(PixelTankPlugin)
+    .add_plugin(ObstaclePlugin)
     .add_startup_system(setup)
 
     .run();

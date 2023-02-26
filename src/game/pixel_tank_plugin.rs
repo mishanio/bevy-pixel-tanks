@@ -1,13 +1,9 @@
-use std::collections::HashMap;
-
 use bevy::prelude::*;
 
 use crate::models::app_state::AppState;
 
-use super::{
-    bullet_components::{BulletBundle, BulletSpawnEvent},
-    components::*,
-};
+use super::bullet_components::*;
+use super::generic_game_components::*;
 
 const Z_TANK: f32 = 1.0;
 
@@ -25,6 +21,7 @@ struct PlayerTankBundle {
     dispawnable: Despawnable,
     movement: Movement,
     acceleration: Acceleration,
+    collide_type: CollideType
 }
 
 impl Default for PlayerTankBundle {
@@ -34,33 +31,21 @@ impl Default for PlayerTankBundle {
             dispawnable: Despawnable,
             movement: Movement::from(MoveDirection::Up),
             acceleration: Acceleration { speed: 1.0 },
+            collide_type: CollideType::Tank
         }
     }
-}
-
-#[derive(Debug)]
-struct EntityRotateEvent {
-    entity: Entity,
-    prev_direction: MoveDirection,
-    direction: MoveDirection,
 }
 
 pub struct PixelTankPlugin;
 
 impl Plugin for PixelTankPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<EntityRotateEvent>()
-            .add_event::<BulletSpawnEvent>()
-            .add_system_set(SystemSet::on_enter(AppState::Game).with_system(setup))
-            .add_system_set(SystemSet::on_enter(AppState::Game).with_system(setup_obstacle))
-            .add_system_set(SystemSet::on_exit(AppState::Game).with_system(despawn))
+        app.add_system_set(SystemSet::on_enter(AppState::Game).with_system(setup))
             .add_system_set(
                 SystemSet::on_update(AppState::Game)
-                    .with_system(movement_system)
                     .with_system(player_tank_movement_control_system)
                     .with_system(player_tank_fire_control_system)
-                    .with_system(bullet_spawn_system)
-                    .with_system(entity_rotate_system),
+                    .with_system(bullet_spawn_system),
             );
     }
 }
@@ -72,42 +57,6 @@ fn setup(mut commands: Commands, assets_server: Res<AssetServer>) {
             ..default()
         })
         .insert(PlayerTankBundle::default());
-}
-
-
-//TODO move to ObstaclePlugin
-#[derive(Component)]
-struct Obstacle;
-
-#[derive(Bundle)]
-struct ObstacleBundle {
-    obstacle: Obstacle,
-    dispawnable: Despawnable,
-}
-
-impl Default for ObstacleBundle {
-    fn default() -> Self {
-        Self {
-            obstacle: Obstacle,
-            dispawnable: Despawnable
-        }
-    }
-}
-
-fn setup_obstacle(mut commands: Commands, assets_server: Res<AssetServer>) {
-    commands
-        .spawn(SpriteBundle {
-            texture: assets_server.load("brick_1.png"),
-            ..default()
-        })
-        .insert(ObstacleBundle::default());
-}
-
-// TODO move to generic pluging
-fn despawn(mut commands: Commands, q_dispawn: Query<Entity, With<Despawnable>>) {
-    for id in q_dispawn.iter() {
-        commands.entity(id).despawn_recursive();
-    }
 }
 
 fn player_tank_movement_control_system(
@@ -149,40 +98,13 @@ fn player_tank_fire_control_system(
     let (movement, transform) = player_tank_query.single_mut();
     if keys.just_released(KeyCode::Space) {
         bullet_spawn_writer.send(BulletSpawnEvent {
-            // TODO determine spawn_point direction with offset from barrel, not from the center of the tank  
+            // TODO determine spawn_point direction with offset from barrel, not from the center of the tank
             spawn_point: transform.translation.clone(),
             movement: Movement {
                 speed: 5.,
                 direction: movement.direction.clone(),
             },
         });
-    }
-}
-
-// TODO move to generic pluging
-fn movement_system(mut q_movement: Query<(&mut Transform, &Movement)>) {
-    for (mut transform, movement) in q_movement.iter_mut() {
-        let (x, y) = movement.to_vec2();
-        transform.translation.x += x;
-        transform.translation.y += y;
-    }
-}
-
-// TODO move to generic pluging
-fn entity_rotate_system(
-    mut entity_rotate_event: EventReader<EntityRotateEvent>,
-    mut entity_movement_query: Query<(Entity, &mut Transform), With<Movement>>,
-) {
-    let rotate_ids: HashMap<Entity, &EntityRotateEvent> = entity_rotate_event
-        .iter()
-        .map(|event| (event.entity, event))
-        .collect();
-    for (entity, mut transform) in entity_movement_query.iter_mut() {
-        //TODO use directions
-        if let Some(event) = rotate_ids.get(&entity) {
-            let angle = event.direction.angle_between(&event.prev_direction);
-            transform.rotate_z(angle);
-        }
     }
 }
 
@@ -196,7 +118,7 @@ fn bullet_spawn_system(
     for event in bullet_spawn_event.iter() {
         let angle = event.movement.direction.angle_between(&MoveDirection::Up);
         let transform = Transform::from_translation(event.spawn_point)
-            .with_scale(Vec3::new(0.5, 0.5, 1.))
+            .with_scale(Vec3::new(0.5, 0.5, Z_TANK))
             .with_rotation(Quat::from_rotation_z(angle));
         // transform.rotate_local_z(angle);
         commands

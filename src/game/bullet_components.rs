@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use super::components::*;
+use super::generic_game_components::*;
 
 #[derive(Debug)]
 pub struct BulletSpawnEvent {
@@ -11,6 +11,7 @@ pub struct BulletSpawnEvent {
 pub struct BulletBundle {
     movement: Movement,
     dispawnable: Despawnable,
+    collide_type: CollideType,
 }
 
 impl BulletBundle {
@@ -18,6 +19,7 @@ impl BulletBundle {
         BulletBundle {
             movement: movement,
             dispawnable: Despawnable,
+            collide_type: CollideType::Obstacle
         }
     }
 }

@@ -1,9 +1,7 @@
-
-use bevy::prelude::{Component, Vec2, debug};
+use bevy::prelude::*;
 
 #[derive(Component)]
 pub struct Despawnable;
-
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum MoveDirection {
@@ -58,4 +56,18 @@ impl Movement {
     pub fn to_vec2(&self) -> (f32, f32) {
         self.direction.to_vec2(self.speed)
     }
+}
+
+#[derive(Debug)]
+pub struct EntityRotateEvent {
+    pub entity: Entity,
+    pub prev_direction: MoveDirection,
+    pub direction: MoveDirection,
+}
+
+#[derive(Component, Debug, Clone)]
+pub enum CollideType {
+    Bullet,
+    Obstacle,
+    Tank,
 }

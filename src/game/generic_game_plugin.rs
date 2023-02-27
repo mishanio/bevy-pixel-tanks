@@ -53,8 +53,8 @@ fn entity_rotate_system(
     }
 }
 
-fn entity_collide_system(mut collide_query: Query<(Entity, &mut Transform, &Sprite, &CollideType)>) {
+fn entity_collide_system(collide_query: Query<(Entity, &Transform, &Sprite, &CollideType)>) {
     for (entity, transform, sprite, collide_type  )in collide_query.iter() {
-        
+        //TODO use https://docs.rs/bevy/0.4.0/bevy/sprite/collide_aabb/fn.collide.html
     }
 }

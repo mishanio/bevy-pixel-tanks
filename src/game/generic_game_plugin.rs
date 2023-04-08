@@ -12,15 +12,17 @@ impl Plugin for GenericGamePlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<EntityRotateEvent>()
             .add_event::<BulletSpawnEvent>()
-            .add_system_set(SystemSet::on_exit(AppState::Game).with_system(despawn))
-            .add_system_set(
-                SystemSet::on_update(AppState::Game)
-                    .with_system(movement_system)
-                    .with_system(entity_rotate_system)
-                    .with_system(entity_collide_system),
+            .add_system(despawn.in_schedule(OnEnter(AppState::Game)))
+            .add_systems(
+                (movement_system, entity_rotate_system, entity_collide_system)
+                    .in_set(OnUpdate(AppState::Game)),
             );
     }
 }
+
+//     .add_system(setup_menu.in_schedule(OnEnter(AppState::Menu)))
+// .add_system(menu.in_set(OnUpdate(AppState::Menu)))
+// .add_system(cleanup_menu.in_schedule(OnExit(AppState::Menu)));
 
 fn despawn(mut commands: Commands, q_dispawn: Query<Entity, With<Despawnable>>) {
     for id in q_dispawn.iter() {
@@ -54,7 +56,7 @@ fn entity_rotate_system(
 }
 
 fn entity_collide_system(collide_query: Query<(Entity, &Transform, &Sprite, &CollideType)>) {
-    for (entity, transform, sprite, collide_type  )in collide_query.iter() {
+    for (entity, transform, sprite, collide_type) in collide_query.iter() {
         //TODO use https://docs.rs/bevy/0.4.0/bevy/sprite/collide_aabb/fn.collide.html
     }
 }

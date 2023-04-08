@@ -10,13 +10,13 @@ use ui_menu::ui_menu_main_plugin::UiMenuPlugin;
 fn main() {
     App::new()
     .add_plugins(DefaultPlugins.set(WindowPlugin {
-        window: WindowDescriptor{
+        primary_window: Some(Window {
         title: "pixel-tanks".to_string(),
         ..default()
-        },
+        }),
         ..default()
     }))
-    .add_state(AppState::MainMenu)
+    .add_state::<AppState>()
     .add_plugin(UiMenuPlugin)
     .add_plugin(GenericGamePlugin)
     .add_plugin(PixelTankPlugin)

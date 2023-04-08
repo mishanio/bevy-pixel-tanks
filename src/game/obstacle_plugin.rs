@@ -8,11 +8,9 @@ pub struct ObstaclePlugin;
 
 impl Plugin for ObstaclePlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_system_set(SystemSet::on_enter(AppState::Game).with_system(setup_obstacle));
+        app.add_system(setup_obstacle.in_schedule(OnEnter(AppState::Game)));
     }
 }
-
 
 fn setup_obstacle(mut commands: Commands, assets_server: Res<AssetServer>) {
     commands

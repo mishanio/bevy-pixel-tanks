@@ -21,7 +21,7 @@ struct PlayerTankBundle {
     dispawnable: Despawnable,
     movement: Movement,
     acceleration: Acceleration,
-    collide_type: CollideType
+    collide_type: CollideType,
 }
 
 impl Default for PlayerTankBundle {
@@ -31,7 +31,7 @@ impl Default for PlayerTankBundle {
             dispawnable: Despawnable,
             movement: Movement::from(MoveDirection::Up),
             acceleration: Acceleration { speed: 1.0 },
-            collide_type: CollideType::Tank
+            collide_type: CollideType::Tank,
         }
     }
 }
@@ -40,12 +40,14 @@ pub struct PixelTankPlugin;
 
 impl Plugin for PixelTankPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set(SystemSet::on_enter(AppState::Game).with_system(setup))
-            .add_system_set(
-                SystemSet::on_update(AppState::Game)
-                    .with_system(player_tank_movement_control_system)
-                    .with_system(player_tank_fire_control_system)
-                    .with_system(bullet_spawn_system),
+        app.add_system(setup.in_schedule(OnEnter(AppState::Game)))
+            .add_systems(
+                (
+                    player_tank_movement_control_system,
+                    player_tank_fire_control_system,
+                    bullet_spawn_system,
+                )
+                    .in_set(OnUpdate(AppState::Game)),
             );
     }
 }

@@ -23,12 +23,11 @@ struct OnGameScreen;
 impl Plugin for UiMenuPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(set_up_font_resource)
-            .add_system_set(SystemSet::on_enter(AppState::MainMenu).with_system(setup_ui_menu))
-            .add_system_set(SystemSet::on_exit(AppState::MainMenu).with_system(despawn_ui_menu))
-            .add_system_set(
-                SystemSet::on_update(AppState::MainMenu)
-                    .with_system(handle_ui_buttons_styles)
-                    .with_system(handle_button_clicked),
+            .add_system(setup_ui_menu.in_schedule(OnEnter(AppState::MainMenu)))
+            .add_system(despawn_ui_menu.in_schedule(OnExit(AppState::MainMenu)))
+            .add_systems(
+                (handle_ui_buttons_styles, handle_button_clicked)
+                    .in_set(OnUpdate(AppState::MainMenu)),
             );
     }
 
@@ -134,14 +133,14 @@ fn handle_ui_buttons_styles(
 
 fn handle_button_clicked(
     new_game_interaction_query: Query<(&Interaction, &MenuButton), Changed<Interaction>>,
-    mut app_state: ResMut<State<AppState>>,
+    mut app_state: ResMut<NextState<AppState>>,
     mut exit: EventWriter<AppExit>,
 ) {
     for (interaction, menu_button) in new_game_interaction_query.iter() {
         if Interaction::Clicked.eq(interaction) {
             match menu_button {
-                MenuButton::NewGame => app_state.set(AppState::Game).unwrap(),
-                MenuButton::Continue => app_state.set(AppState::Game).unwrap(),
+                MenuButton::NewGame => app_state.set(AppState::Game),
+                MenuButton::Continue => app_state.set(AppState::Game),
                 MenuButton::Exit => exit.send(AppExit),
             }
         }
